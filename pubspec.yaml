@@ -75,7 +75,7 @@ flutter:
   uses-material-design: true
   assets:
     - icon.png
-    - windows/runner/resources/app_icon.ico
+    - icon.ico
 
   # To add assets to your application, add an assets section, like this:
   # assets:
