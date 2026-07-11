@@ -9,6 +9,7 @@ import 'core/app_keys.dart';
 import 'state/providers.dart';
 import 'state/scheduler_service.dart';
 import 'ui/pages/home_page.dart';
+import 'ui/pages/rest_overlay.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/widgets/reminder_dialog.dart';
 
@@ -77,6 +78,21 @@ class _TDanceAppState extends ConsumerState<TDanceApp> with WindowListener {
       ],
       supportedLocales: const [Locale('zh', 'CN')],
       home: const HomePage(),
+      builder: (context, child) {
+        final service = ref.read(restModeServiceProvider);
+        return ValueListenableBuilder(
+          valueListenable: service.session,
+          child: child,
+          builder: (context, session, child) {
+            if (session == null) return child ?? const SizedBox.shrink();
+            return RestOverlay(
+              key: ValueKey(session.endsAt),
+              session: session,
+              service: service,
+            );
+          },
+        );
+      },
     );
   }
 }

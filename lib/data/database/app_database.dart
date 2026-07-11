@@ -10,7 +10,7 @@ import 'tables.dart';
 part 'app_database.g.dart';
 
 /// 应用本地数据库（drift + SQLite），完全脱机存储，无网络依赖。
-@DriftDatabase(tables: [TimerTasksTable, AppSettingsTable])
+@DriftDatabase(tables: [TimerTasksTable, RestSessionsTable, AppSettingsTable])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -18,7 +18,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.withExecutor(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(timerTasksTable, timerTasksTable.forceRest);
+        await m.addColumn(timerTasksTable, timerTasksTable.restDurationMinutes);
+        await m.createTable(restSessionsTable);
+      }
+    },
+  );
 
   static QueryExecutor _openConnection() {
     return LazyDatabase(() async {

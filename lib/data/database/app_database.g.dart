@@ -261,6 +261,32 @@ class $TimerTasksTableTable extends TimerTasksTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _forceRestMeta = const VerificationMeta(
+    'forceRest',
+  );
+  @override
+  late final GeneratedColumn<bool> forceRest = GeneratedColumn<bool>(
+    'force_rest',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("force_rest" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _restDurationMinutesMeta =
+      const VerificationMeta('restDurationMinutes');
+  @override
+  late final GeneratedColumn<int> restDurationMinutes = GeneratedColumn<int>(
+    'rest_duration_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(5),
+  );
   static const VerificationMeta _lastTriggeredAtMeta = const VerificationMeta(
     'lastTriggeredAt',
   );
@@ -331,6 +357,8 @@ class $TimerTasksTableTable extends TimerTasksTable
     notify,
     popup,
     snoozeMinutes,
+    forceRest,
+    restDurationMinutes,
     lastTriggeredAt,
     nextTriggerAt,
     createdAt,
@@ -516,6 +544,21 @@ class $TimerTasksTableTable extends TimerTasksTable
         ),
       );
     }
+    if (data.containsKey('force_rest')) {
+      context.handle(
+        _forceRestMeta,
+        forceRest.isAcceptableOrUnknown(data['force_rest']!, _forceRestMeta),
+      );
+    }
+    if (data.containsKey('rest_duration_minutes')) {
+      context.handle(
+        _restDurationMinutesMeta,
+        restDurationMinutes.isAcceptableOrUnknown(
+          data['rest_duration_minutes']!,
+          _restDurationMinutesMeta,
+        ),
+      );
+    }
     if (data.containsKey('last_triggered_at')) {
       context.handle(
         _lastTriggeredAtMeta,
@@ -647,6 +690,14 @@ class $TimerTasksTableTable extends TimerTasksTable
         DriftSqlType.int,
         data['${effectivePrefix}snooze_minutes'],
       ),
+      forceRest: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}force_rest'],
+      )!,
+      restDurationMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rest_duration_minutes'],
+      )!,
       lastTriggeredAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_triggered_at'],
@@ -711,6 +762,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
   final bool notify;
   final bool popup;
   final int? snoozeMinutes;
+  final bool forceRest;
+  final int restDurationMinutes;
   final DateTime? lastTriggeredAt;
   final DateTime? nextTriggerAt;
   final DateTime createdAt;
@@ -738,6 +791,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
     required this.notify,
     required this.popup,
     this.snoozeMinutes,
+    required this.forceRest,
+    required this.restDurationMinutes,
     this.lastTriggeredAt,
     this.nextTriggerAt,
     required this.createdAt,
@@ -788,6 +843,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
     if (!nullToAbsent || snoozeMinutes != null) {
       map['snooze_minutes'] = Variable<int>(snoozeMinutes);
     }
+    map['force_rest'] = Variable<bool>(forceRest);
+    map['rest_duration_minutes'] = Variable<int>(restDurationMinutes);
     if (!nullToAbsent || lastTriggeredAt != null) {
       map['last_triggered_at'] = Variable<DateTime>(lastTriggeredAt);
     }
@@ -843,6 +900,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
       snoozeMinutes: snoozeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(snoozeMinutes),
+      forceRest: Value(forceRest),
+      restDurationMinutes: Value(restDurationMinutes),
       lastTriggeredAt: lastTriggeredAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastTriggeredAt),
@@ -882,6 +941,10 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
       notify: serializer.fromJson<bool>(json['notify']),
       popup: serializer.fromJson<bool>(json['popup']),
       snoozeMinutes: serializer.fromJson<int?>(json['snoozeMinutes']),
+      forceRest: serializer.fromJson<bool>(json['forceRest']),
+      restDurationMinutes: serializer.fromJson<int>(
+        json['restDurationMinutes'],
+      ),
       lastTriggeredAt: serializer.fromJson<DateTime?>(json['lastTriggeredAt']),
       nextTriggerAt: serializer.fromJson<DateTime?>(json['nextTriggerAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -914,6 +977,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
       'notify': serializer.toJson<bool>(notify),
       'popup': serializer.toJson<bool>(popup),
       'snoozeMinutes': serializer.toJson<int?>(snoozeMinutes),
+      'forceRest': serializer.toJson<bool>(forceRest),
+      'restDurationMinutes': serializer.toJson<int>(restDurationMinutes),
       'lastTriggeredAt': serializer.toJson<DateTime?>(lastTriggeredAt),
       'nextTriggerAt': serializer.toJson<DateTime?>(nextTriggerAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -944,6 +1009,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
     bool? notify,
     bool? popup,
     Value<int?> snoozeMinutes = const Value.absent(),
+    bool? forceRest,
+    int? restDurationMinutes,
     Value<DateTime?> lastTriggeredAt = const Value.absent(),
     Value<DateTime?> nextTriggerAt = const Value.absent(),
     DateTime? createdAt,
@@ -983,6 +1050,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
     snoozeMinutes: snoozeMinutes.present
         ? snoozeMinutes.value
         : this.snoozeMinutes,
+    forceRest: forceRest ?? this.forceRest,
+    restDurationMinutes: restDurationMinutes ?? this.restDurationMinutes,
     lastTriggeredAt: lastTriggeredAt.present
         ? lastTriggeredAt.value
         : this.lastTriggeredAt,
@@ -1038,6 +1107,10 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
       snoozeMinutes: data.snoozeMinutes.present
           ? data.snoozeMinutes.value
           : this.snoozeMinutes,
+      forceRest: data.forceRest.present ? data.forceRest.value : this.forceRest,
+      restDurationMinutes: data.restDurationMinutes.present
+          ? data.restDurationMinutes.value
+          : this.restDurationMinutes,
       lastTriggeredAt: data.lastTriggeredAt.present
           ? data.lastTriggeredAt.value
           : this.lastTriggeredAt,
@@ -1074,6 +1147,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
           ..write('notify: $notify, ')
           ..write('popup: $popup, ')
           ..write('snoozeMinutes: $snoozeMinutes, ')
+          ..write('forceRest: $forceRest, ')
+          ..write('restDurationMinutes: $restDurationMinutes, ')
           ..write('lastTriggeredAt: $lastTriggeredAt, ')
           ..write('nextTriggerAt: $nextTriggerAt, ')
           ..write('createdAt: $createdAt, ')
@@ -1106,6 +1181,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
     notify,
     popup,
     snoozeMinutes,
+    forceRest,
+    restDurationMinutes,
     lastTriggeredAt,
     nextTriggerAt,
     createdAt,
@@ -1137,6 +1214,8 @@ class TimerTaskEntity extends DataClass implements Insertable<TimerTaskEntity> {
           other.notify == this.notify &&
           other.popup == this.popup &&
           other.snoozeMinutes == this.snoozeMinutes &&
+          other.forceRest == this.forceRest &&
+          other.restDurationMinutes == this.restDurationMinutes &&
           other.lastTriggeredAt == this.lastTriggeredAt &&
           other.nextTriggerAt == this.nextTriggerAt &&
           other.createdAt == this.createdAt &&
@@ -1166,6 +1245,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
   final Value<bool> notify;
   final Value<bool> popup;
   final Value<int?> snoozeMinutes;
+  final Value<bool> forceRest;
+  final Value<int> restDurationMinutes;
   final Value<DateTime?> lastTriggeredAt;
   final Value<DateTime?> nextTriggerAt;
   final Value<DateTime> createdAt;
@@ -1194,6 +1275,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
     this.notify = const Value.absent(),
     this.popup = const Value.absent(),
     this.snoozeMinutes = const Value.absent(),
+    this.forceRest = const Value.absent(),
+    this.restDurationMinutes = const Value.absent(),
     this.lastTriggeredAt = const Value.absent(),
     this.nextTriggerAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1223,6 +1306,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
     this.notify = const Value.absent(),
     this.popup = const Value.absent(),
     this.snoozeMinutes = const Value.absent(),
+    this.forceRest = const Value.absent(),
+    this.restDurationMinutes = const Value.absent(),
     this.lastTriggeredAt = const Value.absent(),
     this.nextTriggerAt = const Value.absent(),
     required DateTime createdAt,
@@ -1256,6 +1341,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
     Expression<bool>? notify,
     Expression<bool>? popup,
     Expression<int>? snoozeMinutes,
+    Expression<bool>? forceRest,
+    Expression<int>? restDurationMinutes,
     Expression<DateTime>? lastTriggeredAt,
     Expression<DateTime>? nextTriggerAt,
     Expression<DateTime>? createdAt,
@@ -1286,6 +1373,9 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
       if (notify != null) 'notify': notify,
       if (popup != null) 'popup': popup,
       if (snoozeMinutes != null) 'snooze_minutes': snoozeMinutes,
+      if (forceRest != null) 'force_rest': forceRest,
+      if (restDurationMinutes != null)
+        'rest_duration_minutes': restDurationMinutes,
       if (lastTriggeredAt != null) 'last_triggered_at': lastTriggeredAt,
       if (nextTriggerAt != null) 'next_trigger_at': nextTriggerAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -1317,6 +1407,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
     Value<bool>? notify,
     Value<bool>? popup,
     Value<int?>? snoozeMinutes,
+    Value<bool>? forceRest,
+    Value<int>? restDurationMinutes,
     Value<DateTime?>? lastTriggeredAt,
     Value<DateTime?>? nextTriggerAt,
     Value<DateTime>? createdAt,
@@ -1346,6 +1438,8 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
       notify: notify ?? this.notify,
       popup: popup ?? this.popup,
       snoozeMinutes: snoozeMinutes ?? this.snoozeMinutes,
+      forceRest: forceRest ?? this.forceRest,
+      restDurationMinutes: restDurationMinutes ?? this.restDurationMinutes,
       lastTriggeredAt: lastTriggeredAt ?? this.lastTriggeredAt,
       nextTriggerAt: nextTriggerAt ?? this.nextTriggerAt,
       createdAt: createdAt ?? this.createdAt,
@@ -1423,6 +1517,12 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
     if (snoozeMinutes.present) {
       map['snooze_minutes'] = Variable<int>(snoozeMinutes.value);
     }
+    if (forceRest.present) {
+      map['force_rest'] = Variable<bool>(forceRest.value);
+    }
+    if (restDurationMinutes.present) {
+      map['rest_duration_minutes'] = Variable<int>(restDurationMinutes.value);
+    }
     if (lastTriggeredAt.present) {
       map['last_triggered_at'] = Variable<DateTime>(lastTriggeredAt.value);
     }
@@ -1466,11 +1566,359 @@ class TimerTasksTableCompanion extends UpdateCompanion<TimerTaskEntity> {
           ..write('notify: $notify, ')
           ..write('popup: $popup, ')
           ..write('snoozeMinutes: $snoozeMinutes, ')
+          ..write('forceRest: $forceRest, ')
+          ..write('restDurationMinutes: $restDurationMinutes, ')
           ..write('lastTriggeredAt: $lastTriggeredAt, ')
           ..write('nextTriggerAt: $nextTriggerAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RestSessionsTableTable extends RestSessionsTable
+    with TableInfo<$RestSessionsTableTable, RestSessionEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RestSessionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _taskNameMeta = const VerificationMeta(
+    'taskName',
+  );
+  @override
+  late final GeneratedColumn<String> taskName = GeneratedColumn<String>(
+    'task_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageMeta = const VerificationMeta(
+    'message',
+  );
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+    'message',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endsAtMeta = const VerificationMeta('endsAt');
+  @override
+  late final GeneratedColumn<DateTime> endsAt = GeneratedColumn<DateTime>(
+    'ends_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    taskName,
+    message,
+    startedAt,
+    endsAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rest_sessions_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RestSessionEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('task_name')) {
+      context.handle(
+        _taskNameMeta,
+        taskName.isAcceptableOrUnknown(data['task_name']!, _taskNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskNameMeta);
+    }
+    if (data.containsKey('message')) {
+      context.handle(
+        _messageMeta,
+        message.isAcceptableOrUnknown(data['message']!, _messageMeta),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ends_at')) {
+      context.handle(
+        _endsAtMeta,
+        endsAt.isAcceptableOrUnknown(data['ends_at']!, _endsAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endsAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RestSessionEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RestSessionEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      taskName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_name'],
+      )!,
+      message: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endsAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ends_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RestSessionsTableTable createAlias(String alias) {
+    return $RestSessionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class RestSessionEntity extends DataClass
+    implements Insertable<RestSessionEntity> {
+  final int id;
+  final String taskName;
+  final String message;
+  final DateTime startedAt;
+  final DateTime endsAt;
+  const RestSessionEntity({
+    required this.id,
+    required this.taskName,
+    required this.message,
+    required this.startedAt,
+    required this.endsAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['task_name'] = Variable<String>(taskName);
+    map['message'] = Variable<String>(message);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ends_at'] = Variable<DateTime>(endsAt);
+    return map;
+  }
+
+  RestSessionsTableCompanion toCompanion(bool nullToAbsent) {
+    return RestSessionsTableCompanion(
+      id: Value(id),
+      taskName: Value(taskName),
+      message: Value(message),
+      startedAt: Value(startedAt),
+      endsAt: Value(endsAt),
+    );
+  }
+
+  factory RestSessionEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RestSessionEntity(
+      id: serializer.fromJson<int>(json['id']),
+      taskName: serializer.fromJson<String>(json['taskName']),
+      message: serializer.fromJson<String>(json['message']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endsAt: serializer.fromJson<DateTime>(json['endsAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'taskName': serializer.toJson<String>(taskName),
+      'message': serializer.toJson<String>(message),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endsAt': serializer.toJson<DateTime>(endsAt),
+    };
+  }
+
+  RestSessionEntity copyWith({
+    int? id,
+    String? taskName,
+    String? message,
+    DateTime? startedAt,
+    DateTime? endsAt,
+  }) => RestSessionEntity(
+    id: id ?? this.id,
+    taskName: taskName ?? this.taskName,
+    message: message ?? this.message,
+    startedAt: startedAt ?? this.startedAt,
+    endsAt: endsAt ?? this.endsAt,
+  );
+  RestSessionEntity copyWithCompanion(RestSessionsTableCompanion data) {
+    return RestSessionEntity(
+      id: data.id.present ? data.id.value : this.id,
+      taskName: data.taskName.present ? data.taskName.value : this.taskName,
+      message: data.message.present ? data.message.value : this.message,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endsAt: data.endsAt.present ? data.endsAt.value : this.endsAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RestSessionEntity(')
+          ..write('id: $id, ')
+          ..write('taskName: $taskName, ')
+          ..write('message: $message, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endsAt: $endsAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, taskName, message, startedAt, endsAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RestSessionEntity &&
+          other.id == this.id &&
+          other.taskName == this.taskName &&
+          other.message == this.message &&
+          other.startedAt == this.startedAt &&
+          other.endsAt == this.endsAt);
+}
+
+class RestSessionsTableCompanion extends UpdateCompanion<RestSessionEntity> {
+  final Value<int> id;
+  final Value<String> taskName;
+  final Value<String> message;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endsAt;
+  const RestSessionsTableCompanion({
+    this.id = const Value.absent(),
+    this.taskName = const Value.absent(),
+    this.message = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endsAt = const Value.absent(),
+  });
+  RestSessionsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String taskName,
+    this.message = const Value.absent(),
+    required DateTime startedAt,
+    required DateTime endsAt,
+  }) : taskName = Value(taskName),
+       startedAt = Value(startedAt),
+       endsAt = Value(endsAt);
+  static Insertable<RestSessionEntity> custom({
+    Expression<int>? id,
+    Expression<String>? taskName,
+    Expression<String>? message,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endsAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (taskName != null) 'task_name': taskName,
+      if (message != null) 'message': message,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endsAt != null) 'ends_at': endsAt,
+    });
+  }
+
+  RestSessionsTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? taskName,
+    Value<String>? message,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? endsAt,
+  }) {
+    return RestSessionsTableCompanion(
+      id: id ?? this.id,
+      taskName: taskName ?? this.taskName,
+      message: message ?? this.message,
+      startedAt: startedAt ?? this.startedAt,
+      endsAt: endsAt ?? this.endsAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (taskName.present) {
+      map['task_name'] = Variable<String>(taskName.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endsAt.present) {
+      map['ends_at'] = Variable<DateTime>(endsAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RestSessionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('taskName: $taskName, ')
+          ..write('message: $message, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endsAt: $endsAt')
           ..write(')'))
         .toString();
   }
@@ -2182,6 +2630,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TimerTasksTableTable timerTasksTable = $TimerTasksTableTable(
     this,
   );
+  late final $RestSessionsTableTable restSessionsTable =
+      $RestSessionsTableTable(this);
   late final $AppSettingsTableTable appSettingsTable = $AppSettingsTableTable(
     this,
   );
@@ -2191,6 +2641,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     timerTasksTable,
+    restSessionsTable,
     appSettingsTable,
   ];
 }
@@ -2219,6 +2670,8 @@ typedef $$TimerTasksTableTableCreateCompanionBuilder =
       Value<bool> notify,
       Value<bool> popup,
       Value<int?> snoozeMinutes,
+      Value<bool> forceRest,
+      Value<int> restDurationMinutes,
       Value<DateTime?> lastTriggeredAt,
       Value<DateTime?> nextTriggerAt,
       required DateTime createdAt,
@@ -2249,6 +2702,8 @@ typedef $$TimerTasksTableTableUpdateCompanionBuilder =
       Value<bool> notify,
       Value<bool> popup,
       Value<int?> snoozeMinutes,
+      Value<bool> forceRest,
+      Value<int> restDurationMinutes,
       Value<DateTime?> lastTriggeredAt,
       Value<DateTime?> nextTriggerAt,
       Value<DateTime> createdAt,
@@ -2372,6 +2827,16 @@ class $$TimerTasksTableTableFilterComposer
 
   ColumnFilters<int> get snoozeMinutes => $composableBuilder(
     column: $table.snoozeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get forceRest => $composableBuilder(
+    column: $table.forceRest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get restDurationMinutes => $composableBuilder(
+    column: $table.restDurationMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2515,6 +2980,16 @@ class $$TimerTasksTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get forceRest => $composableBuilder(
+    column: $table.forceRest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get restDurationMinutes => $composableBuilder(
+    column: $table.restDurationMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastTriggeredAt => $composableBuilder(
     column: $table.lastTriggeredAt,
     builder: (column) => ColumnOrderings(column),
@@ -2633,6 +3108,14 @@ class $$TimerTasksTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get forceRest =>
+      $composableBuilder(column: $table.forceRest, builder: (column) => column);
+
+  GeneratedColumn<int> get restDurationMinutes => $composableBuilder(
+    column: $table.restDurationMinutes,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get lastTriggeredAt => $composableBuilder(
     column: $table.lastTriggeredAt,
     builder: (column) => column,
@@ -2709,6 +3192,8 @@ class $$TimerTasksTableTableTableManager
                 Value<bool> notify = const Value.absent(),
                 Value<bool> popup = const Value.absent(),
                 Value<int?> snoozeMinutes = const Value.absent(),
+                Value<bool> forceRest = const Value.absent(),
+                Value<int> restDurationMinutes = const Value.absent(),
                 Value<DateTime?> lastTriggeredAt = const Value.absent(),
                 Value<DateTime?> nextTriggerAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -2737,6 +3222,8 @@ class $$TimerTasksTableTableTableManager
                 notify: notify,
                 popup: popup,
                 snoozeMinutes: snoozeMinutes,
+                forceRest: forceRest,
+                restDurationMinutes: restDurationMinutes,
                 lastTriggeredAt: lastTriggeredAt,
                 nextTriggerAt: nextTriggerAt,
                 createdAt: createdAt,
@@ -2767,6 +3254,8 @@ class $$TimerTasksTableTableTableManager
                 Value<bool> notify = const Value.absent(),
                 Value<bool> popup = const Value.absent(),
                 Value<int?> snoozeMinutes = const Value.absent(),
+                Value<bool> forceRest = const Value.absent(),
+                Value<int> restDurationMinutes = const Value.absent(),
                 Value<DateTime?> lastTriggeredAt = const Value.absent(),
                 Value<DateTime?> nextTriggerAt = const Value.absent(),
                 required DateTime createdAt,
@@ -2795,6 +3284,8 @@ class $$TimerTasksTableTableTableManager
                 notify: notify,
                 popup: popup,
                 snoozeMinutes: snoozeMinutes,
+                forceRest: forceRest,
+                restDurationMinutes: restDurationMinutes,
                 lastTriggeredAt: lastTriggeredAt,
                 nextTriggerAt: nextTriggerAt,
                 createdAt: createdAt,
@@ -2824,6 +3315,213 @@ typedef $$TimerTasksTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $TimerTasksTableTable, TimerTaskEntity>,
       ),
       TimerTaskEntity,
+      PrefetchHooks Function()
+    >;
+typedef $$RestSessionsTableTableCreateCompanionBuilder =
+    RestSessionsTableCompanion Function({
+      Value<int> id,
+      required String taskName,
+      Value<String> message,
+      required DateTime startedAt,
+      required DateTime endsAt,
+    });
+typedef $$RestSessionsTableTableUpdateCompanionBuilder =
+    RestSessionsTableCompanion Function({
+      Value<int> id,
+      Value<String> taskName,
+      Value<String> message,
+      Value<DateTime> startedAt,
+      Value<DateTime> endsAt,
+    });
+
+class $$RestSessionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RestSessionsTableTable> {
+  $$RestSessionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskName => $composableBuilder(
+    column: $table.taskName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endsAt => $composableBuilder(
+    column: $table.endsAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RestSessionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RestSessionsTableTable> {
+  $$RestSessionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskName => $composableBuilder(
+    column: $table.taskName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endsAt => $composableBuilder(
+    column: $table.endsAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RestSessionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RestSessionsTableTable> {
+  $$RestSessionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get taskName =>
+      $composableBuilder(column: $table.taskName, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endsAt =>
+      $composableBuilder(column: $table.endsAt, builder: (column) => column);
+}
+
+class $$RestSessionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RestSessionsTableTable,
+          RestSessionEntity,
+          $$RestSessionsTableTableFilterComposer,
+          $$RestSessionsTableTableOrderingComposer,
+          $$RestSessionsTableTableAnnotationComposer,
+          $$RestSessionsTableTableCreateCompanionBuilder,
+          $$RestSessionsTableTableUpdateCompanionBuilder,
+          (
+            RestSessionEntity,
+            BaseReferences<
+              _$AppDatabase,
+              $RestSessionsTableTable,
+              RestSessionEntity
+            >,
+          ),
+          RestSessionEntity,
+          PrefetchHooks Function()
+        > {
+  $$RestSessionsTableTableTableManager(
+    _$AppDatabase db,
+    $RestSessionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RestSessionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RestSessionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RestSessionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> taskName = const Value.absent(),
+                Value<String> message = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> endsAt = const Value.absent(),
+              }) => RestSessionsTableCompanion(
+                id: id,
+                taskName: taskName,
+                message: message,
+                startedAt: startedAt,
+                endsAt: endsAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String taskName,
+                Value<String> message = const Value.absent(),
+                required DateTime startedAt,
+                required DateTime endsAt,
+              }) => RestSessionsTableCompanion.insert(
+                id: id,
+                taskName: taskName,
+                message: message,
+                startedAt: startedAt,
+                endsAt: endsAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RestSessionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RestSessionsTableTable,
+      RestSessionEntity,
+      $$RestSessionsTableTableFilterComposer,
+      $$RestSessionsTableTableOrderingComposer,
+      $$RestSessionsTableTableAnnotationComposer,
+      $$RestSessionsTableTableCreateCompanionBuilder,
+      $$RestSessionsTableTableUpdateCompanionBuilder,
+      (
+        RestSessionEntity,
+        BaseReferences<
+          _$AppDatabase,
+          $RestSessionsTableTable,
+          RestSessionEntity
+        >,
+      ),
+      RestSessionEntity,
       PrefetchHooks Function()
     >;
 typedef $$AppSettingsTableTableCreateCompanionBuilder =
@@ -3168,6 +3866,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$TimerTasksTableTableTableManager get timerTasksTable =>
       $$TimerTasksTableTableTableManager(_db, _db.timerTasksTable);
+  $$RestSessionsTableTableTableManager get restSessionsTable =>
+      $$RestSessionsTableTableTableManager(_db, _db.restSessionsTable);
   $$AppSettingsTableTableTableManager get appSettingsTable =>
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
 }

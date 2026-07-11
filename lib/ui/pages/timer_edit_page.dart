@@ -56,6 +56,8 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
   SoundConfig _sound = const SoundConfig();
   bool _useSnooze = true;
   int _snoozeMinutes = 5;
+  bool _forceRest = false;
+  int _restDurationMinutes = 5;
 
   bool get _isEditing => widget.existing != null;
 
@@ -101,6 +103,8 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
         );
     _snoozeMinutes = existing?.snoozeMinutes ?? 5;
     _useSnooze = (existing?.snoozeMinutes ?? 5) > 0;
+    _forceRest = existing?.forceRest ?? false;
+    _restDurationMinutes = existing?.restDurationMinutes ?? 5;
   }
 
   @override
@@ -179,22 +183,60 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
               _buildEndConditionSection(),
             ],
             const Divider(height: 32),
+            Text('休息模式', style: Theme.of(context).textTheme.titleSmall),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('强制休息蒙层'),
+              subtitle: const Text('触发前提示 10 秒，随后覆盖整个桌面并阻止常规操作'),
+              value: _forceRest,
+              onChanged: (v) => setState(() => _forceRest = v),
+            ),
+            if (_forceRest) ...[
+              Row(
+                children: [
+                  const Text('休息时长：'),
+                  Expanded(
+                    child: Slider(
+                      min: 5,
+                      max: 10,
+                      divisions: 5,
+                      value: _restDurationMinutes.toDouble(),
+                      label: '$_restDurationMinutes 分钟',
+                      onChanged: (v) => setState(() => _restDurationMinutes = v.round()),
+                    ),
+                  ),
+                  Text('$_restDurationMinutes 分钟'),
+                ],
+              ),
+              Card(
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text(
+                    '开始后只能等待倒计时结束；紧急情况可持续按住 '
+                    'Ctrl + Shift + F12 10 秒解除。',
+                  ),
+                ),
+              ),
+            ],
+            const Divider(height: 32),
             Text('提醒方式', style: Theme.of(context).textTheme.titleSmall),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('系统通知'),
-              value: _notify,
-              onChanged: (v) => setState(() => _notify = v),
+              subtitle: _forceRest ? const Text('强制休息会始终发送开始前提示') : null,
+              value: _forceRest || _notify,
+              onChanged: _forceRest ? null : (v) => setState(() => _notify = v),
             ),
             SoundConfigEditor(value: _sound, onChanged: (v) => setState(() => _sound = v)),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('应用内弹窗'),
               subtitle: const Text('应用在前台时，弹出醒目提醒对话框'),
-              value: _popup,
-              onChanged: (v) => setState(() => _popup = v),
+              value: !_forceRest && _popup,
+              onChanged: _forceRest ? null : (v) => setState(() => _popup = v),
             ),
-            if (_popup) ...[
+            if (_popup && !_forceRest) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('稍后提醒（贪睡）'),
@@ -540,6 +582,8 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
       notify: _notify,
       popup: _popup,
       snoozeMinutes: _useSnooze ? _snoozeMinutes : null,
+      forceRest: _forceRest,
+      restDurationMinutes: _restDurationMinutes,
       lastTriggeredAt: base?.lastTriggeredAt,
       nextTriggerAt: base?.nextTriggerAt,
       createdAt: base?.createdAt ?? now,

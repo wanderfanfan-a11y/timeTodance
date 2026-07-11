@@ -118,6 +118,8 @@ class TimerTask {
   final bool notify;
   final bool popup;
   final int? snoozeMinutes;
+  final bool forceRest;
+  final int restDurationMinutes;
 
   final DateTime? lastTriggeredAt;
   final DateTime? nextTriggerAt;
@@ -144,6 +146,8 @@ class TimerTask {
     this.notify = true,
     this.popup = false,
     this.snoozeMinutes = 5,
+    this.forceRest = false,
+    this.restDurationMinutes = 5,
     this.lastTriggeredAt,
     this.nextTriggerAt,
     required this.createdAt,
@@ -174,6 +178,8 @@ class TimerTask {
     bool? notify,
     bool? popup,
     int? snoozeMinutes,
+    bool? forceRest,
+    int? restDurationMinutes,
     DateTime? lastTriggeredAt,
     bool clearLastTriggeredAt = false,
     DateTime? nextTriggerAt,
@@ -199,6 +205,8 @@ class TimerTask {
       notify: notify ?? this.notify,
       popup: popup ?? this.popup,
       snoozeMinutes: snoozeMinutes ?? this.snoozeMinutes,
+      forceRest: forceRest ?? this.forceRest,
+      restDurationMinutes: restDurationMinutes ?? this.restDurationMinutes,
       lastTriggeredAt: clearLastTriggeredAt ? null : (lastTriggeredAt ?? this.lastTriggeredAt),
       nextTriggerAt: clearNextTriggerAt ? null : (nextTriggerAt ?? this.nextTriggerAt),
       createdAt: createdAt,
