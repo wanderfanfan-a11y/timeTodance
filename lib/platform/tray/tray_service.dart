@@ -4,17 +4,20 @@ import 'package:tray_manager/tray_manager.dart';
 
 import '../../core/asset_path.dart';
 
-/// 封装 tray_manager：托盘图标、右键菜单（显示主界面/快速新建/全部暂停/退出）。
+/// 封装 tray_manager：托盘图标、右键菜单（显示主界面/快速新建/全部暂停或恢复/退出）。
 class TrayService with TrayListener {
   final Future<void> Function() onShowWindow;
   final Future<void> Function() onQuickAdd;
   final Future<void> Function() onPauseAll;
+  final Future<void> Function() onResumeAll;
   final Future<void> Function() onExit;
+  bool _allPaused = false;
 
   TrayService({
     required this.onShowWindow,
     required this.onQuickAdd,
     required this.onPauseAll,
+    required this.onResumeAll,
     required this.onExit,
   });
 
@@ -33,7 +36,7 @@ class TrayService with TrayListener {
       items: [
         MenuItem(key: 'show_window', label: '显示主界面'),
         MenuItem(key: 'quick_add', label: '快速新建'),
-        MenuItem(key: 'pause_all', label: '全部暂停'),
+        MenuItem(key: 'toggle_pause_all', label: _allPaused ? '全部恢复' : '全部暂停'),
         MenuItem.separator(),
         MenuItem(key: 'exit_app', label: '退出'),
       ],
@@ -64,12 +67,22 @@ class TrayService with TrayListener {
       case 'quick_add':
         onQuickAdd();
         break;
-      case 'pause_all':
-        onPauseAll();
+      case 'toggle_pause_all':
+        _togglePauseAll();
         break;
       case 'exit_app':
         onExit();
         break;
     }
+  }
+
+  Future<void> _togglePauseAll() async {
+    if (_allPaused) {
+      await onResumeAll();
+    } else {
+      await onPauseAll();
+    }
+    _allPaused = !_allPaused;
+    await _rebuildMenu();
   }
 }

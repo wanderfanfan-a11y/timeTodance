@@ -46,6 +46,7 @@ Future<void> main() async {
       );
     },
     onPauseAll: container.read(schedulerServiceProvider).pauseAll,
+    onResumeAll: container.read(schedulerServiceProvider).resumeAll,
     onExit: () async {
       trayService.dispose();
       await instanceGuard.release();
