@@ -26,6 +26,7 @@ class SchedulerService {
   final NotificationService notificationService;
   final SoundService soundService;
   final ScheduleCalculator _calculator = const ScheduleCalculator();
+  static const Duration _deliveryGracePeriod = Duration(seconds: 2);
 
   final Map<String, Timer> _timers = {};
   final Map<String, Timer> _snoozeTimers = {};
@@ -103,6 +104,14 @@ class SchedulerService {
     if (task == null || !task.enabled) return;
 
     final now = DateTime.now();
+    final scheduledAt = task.nextTriggerAt;
+    if (scheduledAt == null) return;
+    if (now.difference(scheduledAt) > _deliveryGracePeriod) {
+      final nextTrigger = _calculator.computeNextTrigger(task, now);
+      await timerRepository.updateNextTrigger(taskId, nextTrigger);
+      return;
+    }
+
     final suppressedByDnd = _settings.isInDnd(now);
     final taskAfterTrigger = suppressedByDnd
         ? task
