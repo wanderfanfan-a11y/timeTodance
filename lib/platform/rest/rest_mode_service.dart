@@ -2,29 +2,34 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../data/repositories/rest_session_repository.dart';
 import '../../domain/models/rest_session.dart';
 import '../../domain/models/timer_task.dart';
-import '../window/window_service.dart';
+import 'rest_mode_dependencies.dart';
 
 class RestModeService {
-  final RestSessionRepository repository;
-  final WindowService windowService;
+  final RestSessionStore repository;
+  final RestOverlayWindow windowService;
+  final DateTime Function() now;
 
   final ValueNotifier<RestSession?> session = ValueNotifier(null);
   Timer? _endTimer;
+  Future<void>? _endOperation;
 
-  RestModeService({required this.repository, required this.windowService});
+  RestModeService({
+    required this.repository,
+    required this.windowService,
+    DateTime Function()? now,
+  }) : now = now ?? DateTime.now;
 
   bool get isActive {
     final current = session.value;
-    return current != null && current.endsAt.isAfter(DateTime.now());
+    return current != null && current.endsAt.isAfter(now());
   }
 
   Future<void> initialize() async {
     final saved = await repository.load();
     if (saved == null) return;
-    if (!saved.endsAt.isAfter(DateTime.now())) {
+    if (!saved.endsAt.isAfter(now())) {
       await repository.clear();
       return;
     }
@@ -32,12 +37,12 @@ class RestModeService {
   }
 
   Future<void> start(TimerTask task) async {
-    final now = DateTime.now();
-    final requestedEnd = now.add(
+    final startedAt = now();
+    final requestedEnd = startedAt.add(
       Duration(minutes: task.restDurationMinutes.clamp(5, 10)),
     );
     final current = session.value;
-    if (current != null && current.endsAt.isAfter(now)) {
+    if (current != null && current.endsAt.isAfter(startedAt)) {
       if (!requestedEnd.isAfter(current.endsAt)) return;
       await _activate(
         RestSession(
@@ -54,7 +59,7 @@ class RestModeService {
       RestSession(
         taskName: task.name,
         message: task.message,
-        startedAt: now,
+        startedAt: startedAt,
         endsAt: requestedEnd,
       ),
     );
@@ -62,7 +67,20 @@ class RestModeService {
 
   Future<void> emergencyExit() => end();
 
-  Future<void> end() async {
+  Future<void> end() {
+    final pending = _endOperation;
+    if (pending != null) return pending;
+    late final Future<void> operation;
+    operation = _finishEnd().whenComplete(() {
+      if (identical(_endOperation, operation)) {
+        _endOperation = null;
+      }
+    });
+    _endOperation = operation;
+    return operation;
+  }
+
+  Future<void> _finishEnd() async {
     _endTimer?.cancel();
     _endTimer = null;
     await windowService.exitRestOverlay();
@@ -77,7 +95,9 @@ class RestModeService {
     }
     session.value = next;
     await windowService.enterRestOverlay();
-    _endTimer = Timer(next.endsAt.difference(DateTime.now()), end);
+    _endTimer = Timer(next.endsAt.difference(now()), () {
+      unawaited(end());
+    });
   }
 
   void dispose() {

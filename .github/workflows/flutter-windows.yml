@@ -34,6 +34,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Test
+        run: flutter test
+
       - name: Build Windows release
         run: flutter build windows --release
 

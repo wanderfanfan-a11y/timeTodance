@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../rest/rest_mode_dependencies.dart';
+
 /// 封装 window_manager：窗口初始化、显示/隐藏、拦截关闭按钮。
-class WindowService {
+class WindowService implements RestOverlayWindow {
   const WindowService();
 
   static const MethodChannel _channel = MethodChannel('tdance/window');
@@ -42,6 +44,7 @@ class WindowService {
     await windowManager.focus();
   }
 
+  @override
   Future<void> enterRestOverlay() async {
     if (Platform.isWindows) {
       await _channel.invokeMethod<void>('enterRestMode');
@@ -51,6 +54,7 @@ class WindowService {
     await windowManager.setAlwaysOnTop(true);
   }
 
+  @override
   Future<void> exitRestOverlay() async {
     if (Platform.isWindows) {
       await _channel.invokeMethod<void>('exitRestMode');

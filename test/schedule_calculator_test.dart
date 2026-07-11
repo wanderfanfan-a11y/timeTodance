@@ -188,7 +188,7 @@ void main() {
       expect(calculator.computeNextTrigger(task, now), isNull);
     });
 
-    test('byDate stops triggers after the end date', () {
+    test('byDate allows triggers throughout the inclusive end date', () {
       final created = DateTime(2026, 1, 1, 9, 0, 0);
       final now = DateTime(2026, 1, 1, 9, 0, 30);
       final task = _base(
@@ -196,6 +196,21 @@ void main() {
         intervalSeconds: 60,
         createdAt: created,
         endCondition: EndCondition.byDate(DateTime(2026, 1, 1, 9, 0, 45)),
+      );
+      expect(
+        calculator.computeNextTrigger(task, now),
+        DateTime(2026, 1, 1, 9, 1),
+      );
+    });
+
+    test('byDate stops triggers after the inclusive end date', () {
+      final created = DateTime(2026, 1, 1, 23, 59);
+      final now = DateTime(2026, 1, 1, 23, 59, 30);
+      final task = _base(
+        type: TimerType.interval,
+        intervalSeconds: 60,
+        createdAt: created,
+        endCondition: EndCondition.byDate(DateTime(2026, 1, 1)),
       );
       expect(calculator.computeNextTrigger(task, now), isNull);
     });
