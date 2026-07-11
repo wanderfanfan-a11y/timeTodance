@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 // 使用纯数字 + 中文字面量的 pattern，避免依赖 intl 的 locale 名称数据
 // （月份/星期英文名），因此无需额外调用 initializeDateFormatting。
 final DateFormat _fullFormat = DateFormat('yyyy年MM月dd日 HH:mm:ss');
+final DateFormat _dateFormat = DateFormat('yyyy年MM月dd日');
 final DateFormat _shortFormat = DateFormat('MM月dd日 HH:mm');
 final DateFormat _timeFormat = DateFormat('HH:mm');
 
@@ -10,6 +11,8 @@ const List<String> weekdayLabels = ['周一', '周二', '周三', '周四', '周
 const List<String> weekdayShortLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
 String formatFullDateTime(DateTime dt) => _fullFormat.format(dt);
+
+String formatDate(DateTime dt) => _dateFormat.format(dt);
 
 String formatShortDateTime(DateTime dt) => _shortFormat.format(dt);
 
