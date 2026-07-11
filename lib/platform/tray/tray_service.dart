@@ -24,7 +24,7 @@ class TrayService with TrayListener {
   Future<void> init() async {
     trayManager.addListener(this);
     final iconPath = Platform.isWindows
-        ? resolveDesktopAssetPath('windows/runner/resources/app_icon.ico')
+        ? resolveDesktopAssetPath('icon.ico')
         : resolveDesktopAssetPath('assets/icon/icon.png');
     await trayManager.setIcon(iconPath);
     await trayManager.setToolTip('tdance 定时提醒');
