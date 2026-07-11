@@ -24,6 +24,7 @@ class TimerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final subtitle = formatNextTrigger(task.nextTriggerAt, enabled: task.enabled);
+    final restLabel = task.forceRest ? '强制休息 ${task.restDurationMinutes} 分钟 · ' : '';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -51,7 +52,7 @@ class TimerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${timerTypeLabel(task.type)} · $subtitle',
+                      '${timerTypeLabel(task.type)} · $restLabel$subtitle',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),

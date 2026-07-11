@@ -29,12 +29,15 @@ Future<void> main() async {
   final container = ProviderContainer();
   await container.read(notificationServiceProvider).init(appName: 'tdance');
   await container.read(startupServiceProvider).init();
+  final restModeService = container.read(restModeServiceProvider);
+  await restModeService.initialize();
   await container.read(schedulerServiceProvider).start();
 
   late final TrayService trayService;
   trayService = TrayService(
     onShowWindow: windowService.showAndFocus,
     onQuickAdd: () async {
+      if (restModeService.isActive) return;
       await windowService.showAndFocus();
       final navigator = rootNavigatorKey.currentState;
       if (navigator == null) return;
@@ -48,6 +51,7 @@ Future<void> main() async {
     onPauseAll: container.read(schedulerServiceProvider).pauseAll,
     onResumeAll: container.read(schedulerServiceProvider).resumeAll,
     onExit: () async {
+      if (restModeService.isActive) return;
       trayService.dispose();
       await instanceGuard.release();
       container.dispose();

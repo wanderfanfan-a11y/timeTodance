@@ -6,6 +6,7 @@ import '../domain/models/app_settings.dart';
 import '../domain/models/timer_task.dart';
 import '../domain/schedule/schedule_calculator.dart';
 import '../platform/notification/notification_service.dart';
+import '../platform/rest/rest_mode_service.dart';
 import '../platform/sound/sound_service.dart';
 
 /// 提醒到点时的事件载荷，交给 UI 层决定是否弹窗展示（应用内弹窗，FR-3.4）。
@@ -25,6 +26,7 @@ class SchedulerService {
   final SettingsRepository settingsRepository;
   final NotificationService notificationService;
   final SoundService soundService;
+  final RestModeService restModeService;
   final ScheduleCalculator _calculator = const ScheduleCalculator();
   static const Duration _deliveryGracePeriod = Duration(seconds: 2);
 
@@ -46,6 +48,7 @@ class SchedulerService {
     required this.settingsRepository,
     required this.notificationService,
     required this.soundService,
+    required this.restModeService,
   });
 
   /// 启动调度引擎：重新计算所有定时器的下一次触发时间（不补发错过的提醒），
@@ -132,6 +135,19 @@ class SchedulerService {
   }
 
   Future<void> _deliver(TimerTask task) async {
+    if (task.forceRest) {
+      await notificationService.show(
+        title: '强制休息将在 10 秒后开始',
+        body: task.message.isEmpty ? task.name : task.message,
+      );
+      if (task.sound.enabled) {
+        await soundService.play(soundId: task.sound.soundId, volume: task.sound.volume);
+      }
+      await Future<void>.delayed(const Duration(seconds: 10));
+      await restModeService.start(task);
+      return;
+    }
+
     if (task.notify) {
       await notificationService.show(
         title: task.name,

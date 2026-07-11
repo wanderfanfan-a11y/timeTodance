@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// 封装 window_manager：窗口初始化、显示/隐藏、拦截关闭按钮。
 class WindowService {
   const WindowService();
+
+  static const MethodChannel _channel = MethodChannel('tdance/window');
 
   Future<void> init() async {
     await windowManager.ensureInitialized();
@@ -35,6 +40,24 @@ class WindowService {
   Future<void> showAndFocus() async {
     await windowManager.show();
     await windowManager.focus();
+  }
+
+  Future<void> enterRestOverlay() async {
+    if (Platform.isWindows) {
+      await _channel.invokeMethod<void>('enterRestMode');
+      return;
+    }
+    await windowManager.setFullScreen(true);
+    await windowManager.setAlwaysOnTop(true);
+  }
+
+  Future<void> exitRestOverlay() async {
+    if (Platform.isWindows) {
+      await _channel.invokeMethod<void>('exitRestMode');
+      return;
+    }
+    await windowManager.setAlwaysOnTop(false);
+    await windowManager.setFullScreen(false);
   }
 
   /// 真正退出应用（用于托盘菜单"退出"或设置中选择"直接退出"）。

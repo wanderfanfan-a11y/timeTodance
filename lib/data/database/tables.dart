@@ -47,12 +47,26 @@ class TimerTasksTable extends Table {
   BoolColumn get notify => boolean().withDefault(const Constant(true))();
   BoolColumn get popup => boolean().withDefault(const Constant(false))();
   IntColumn get snoozeMinutes => integer().nullable()();
+  BoolColumn get forceRest => boolean().withDefault(const Constant(false))();
+  IntColumn get restDurationMinutes => integer().withDefault(const Constant(5))();
 
   DateTimeColumn get lastTriggeredAt => dateTime().nullable()();
   DateTimeColumn get nextTriggerAt => dateTime().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('RestSessionEntity')
+class RestSessionsTable extends Table {
+  IntColumn get id => integer().withDefault(const Constant(0))();
+  TextColumn get taskName => text()();
+  TextColumn get message => text().withDefault(const Constant(''))();
+  DateTimeColumn get startedAt => dateTime()();
+  DateTimeColumn get endsAt => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};
