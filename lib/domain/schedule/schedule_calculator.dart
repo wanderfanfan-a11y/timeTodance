@@ -168,7 +168,10 @@ class ScheduleCalculator {
         return candidate;
       case EndConditionType.byDate:
         final endDate = task.endCondition.date;
-        if (endDate != null && candidate.isAfter(endDate)) return null;
+        if (endDate != null) {
+          final endExclusive = DateTime(endDate.year, endDate.month, endDate.day + 1);
+          if (!candidate.isBefore(endExclusive)) return null;
+        }
         return candidate;
       case EndConditionType.byCount:
         final endCount = task.endCondition.count;

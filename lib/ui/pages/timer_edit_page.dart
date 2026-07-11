@@ -405,7 +405,7 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('结束日期'),
-            subtitle: Text(formatShortDateTime(_endDate)),
+            subtitle: Text(formatDate(_endDate)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final now = DateTime.now();
