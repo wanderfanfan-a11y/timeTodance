@@ -69,10 +69,20 @@ class ScheduleCalculator {
       }
     }
 
-    candidate = _applyWeekdayFilter(task, candidate, intervalMs: intervalMs);
-    candidate = _applyActiveWindow(task, candidate, intervalMs: intervalMs);
+    candidate = _applyIntervalRestrictions(task, candidate);
 
     return _applyEndCondition(task, candidate);
+  }
+
+  DateTime _applyIntervalRestrictions(TimerTask task, DateTime candidate) {
+    var result = candidate;
+    for (var guard = 0; guard < 8; guard++) {
+      result = _applyWeekdayFilter(task, result);
+      final windowAdjusted = _applyActiveWindow(task, result);
+      if (windowAdjusted == result) return result;
+      result = windowAdjusted;
+    }
+    return result;
   }
 
   /// daily / weekly 共用的"每日固定时刻"计算。
@@ -103,21 +113,28 @@ class ScheduleCalculator {
   }
 
   /// 对 interval 类型应用星期过滤：若命中的候选时间所在星期不在 weekdays 中，
-  /// 则按 interval 步长继续前进，直到落在允许的星期内。
-  DateTime _applyWeekdayFilter(TimerTask task, DateTime candidate, {required int intervalMs}) {
+  /// 则顺延到下一个允许日期，并保留候选时间的时分秒。
+  DateTime _applyWeekdayFilter(TimerTask task, DateTime candidate) {
     if (task.weekdays.isEmpty) return candidate;
-    var result = candidate;
-    var guard = 0;
-    while (!task.weekdays.contains(result.weekday) && guard < 7 * 24 * 3600) {
-      result = result.add(Duration(milliseconds: intervalMs));
-      guard++;
+    for (var dayOffset = 0; dayOffset <= 7; dayOffset++) {
+      final result = DateTime(
+        candidate.year,
+        candidate.month,
+        candidate.day + dayOffset,
+        candidate.hour,
+        candidate.minute,
+        candidate.second,
+        candidate.millisecond,
+        candidate.microsecond,
+      );
+      if (task.weekdays.contains(result.weekday)) return result;
     }
-    return result;
+    return candidate;
   }
 
   /// 对 interval 类型应用生效时段限制：若候选时间落在 [activeStart, activeEnd)
   /// 之外，则前移到下一个窗口开始时间。
-  DateTime _applyActiveWindow(TimerTask task, DateTime candidate, {required int intervalMs}) {
+  DateTime _applyActiveWindow(TimerTask task, DateTime candidate) {
     final start = task.activeStart;
     final end = task.activeEnd;
     if (start == null || end == null) return candidate;
