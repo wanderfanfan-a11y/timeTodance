@@ -15,7 +15,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   /// 供单元测试/集成测试使用，可注入内存数据库等自定义 executor。
-  AppDatabase.withExecutor(QueryExecutor executor) : super(executor);
+  AppDatabase.withExecutor(super.executor);
 
   @override
   int get schemaVersion => 1;
