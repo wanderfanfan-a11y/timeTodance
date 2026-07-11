@@ -31,6 +31,7 @@ class SchedulerService {
   final Map<String, Timer> _timers = {};
   final Map<String, Timer> _snoozeTimers = {};
   AppSettings _settings = const AppSettings();
+  bool _globallyPaused = false;
 
   StreamSubscription<List<TimerTask>>? _taskSub;
   StreamSubscription<AppSettings>? _settingsSub;
@@ -93,7 +94,7 @@ class SchedulerService {
 
   void _scheduleTask(TimerTask task) {
     _timers.remove(task.id)?.cancel();
-    if (!task.enabled || task.nextTriggerAt == null) return;
+    if (_globallyPaused || !task.enabled || task.nextTriggerAt == null) return;
     final delay = task.nextTriggerAt!.difference(DateTime.now());
     final safeDelay = delay.isNegative ? Duration.zero : delay;
     _timers[task.id] = Timer(safeDelay, () => _fire(task.id));
@@ -152,13 +153,30 @@ class SchedulerService {
     _snoozeTimers[task.id] = Timer(duration, () => _deliver(task));
   }
 
-  /// 托盘菜单"全部暂停"（FR-4.2）。
+  /// 托盘菜单"全部暂停/恢复"（FR-4.2）。
   Future<void> pauseAll() async {
+    _globallyPaused = true;
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
+    for (final timer in _snoozeTimers.values) {
+      timer.cancel();
+    }
+    _timers.clear();
+    _snoozeTimers.clear();
+  }
+
+  Future<void> resumeAll() async {
+    _globallyPaused = false;
     final tasks = await timerRepository.loadAll();
+    final now = DateTime.now();
     for (final task in tasks) {
-      if (task.enabled) {
-        await timerRepository.setEnabled(task.id, false);
+      if (!task.enabled) continue;
+      final nextTrigger = _calculator.computeNextTrigger(task, now);
+      if (nextTrigger != task.nextTriggerAt) {
+        await timerRepository.updateNextTrigger(task.id, nextTrigger);
       }
     }
+    _reconcile(await timerRepository.loadAll());
   }
 }
