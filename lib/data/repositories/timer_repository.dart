@@ -61,8 +61,21 @@ class TimerRepository {
   }
 
   Future<void> setEnabled(String id, bool enabled) async {
+    if (enabled) {
+      final task = await findById(id);
+      if (task == null) return;
+      final nextTriggerAt = const ScheduleCalculator().computeNextTrigger(task, DateTime.now());
+      await (_db.update(_db.timerTasksTable)..where((t) => t.id.equals(id))).write(
+        TimerTasksTableCompanion(
+          enabled: const Value(true),
+          nextTriggerAt: Value(nextTriggerAt),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      return;
+    }
     await (_db.update(_db.timerTasksTable)..where((t) => t.id.equals(id))).write(
-      TimerTasksTableCompanion(enabled: Value(enabled), updatedAt: Value(DateTime.now())),
+      TimerTasksTableCompanion(enabled: const Value(false), updatedAt: Value(DateTime.now())),
     );
   }
 
