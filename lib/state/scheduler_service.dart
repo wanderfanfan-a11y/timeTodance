@@ -104,7 +104,13 @@ class SchedulerService {
 
     final now = DateTime.now();
     final suppressedByDnd = _settings.isInDnd(now);
-    final nextTrigger = _calculator.computeNextTrigger(task, now);
+    final taskAfterTrigger = suppressedByDnd
+        ? task
+        : task.copyWith(triggeredCount: task.triggeredCount + 1);
+    final nextTrigger = _calculator.computeNextTrigger(
+      taskAfterTrigger,
+      now,
+    );
 
     if (suppressedByDnd) {
       // 勿扰时段：完全不提醒（不通知/不发声/不弹窗），仅静默前进到下一次。
