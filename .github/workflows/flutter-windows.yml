@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,6 +16,8 @@ jobs:
   build:
     runs-on: windows-2022
     timeout-minutes: 30
+    outputs:
+      app_version: ${{ steps.version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +31,25 @@ jobs:
       - name: Restore dependencies
         run: flutter pub get
 
+      - name: Determine release version
+        id: version
+        run: |
+          $versionLine = Get-Content pubspec.yaml |
+            Where-Object { $_ -match "^\s*version:" } |
+            Select-Object -First 1
+          if ($versionLine -match "^\s*version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$") {
+            $version = $Matches[1]
+            $buildNumber = $Matches[2]
+          } else {
+            throw "pubspec.yaml must contain a major.minor.patch+build version."
+          }
+          if ($env:GITHUB_REF_TYPE -eq "tag" -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match pubspec version v$version."
+          }
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+          "APP_BUILD_NUMBER=$buildNumber" >> $env:GITHUB_ENV
+          "version=$version" >> $env:GITHUB_OUTPUT
+
       - name: Verify generated database code
         run: |
           dart run build_runner build --delete-conflicting-outputs
@@ -38,12 +62,94 @@ jobs:
         run: flutter test
 
       - name: Build Windows release
-        run: flutter build windows --release
+        run: |
+          flutter build windows --release `
+            --build-name $env:APP_VERSION `
+            --build-number $env:APP_BUILD_NUMBER
 
-      - name: Upload Windows release
+      - name: Package Windows release
+        run: .\tool\package_windows.ps1 -Version $env:APP_VERSION -SkipBuild
+
+      - name: Verify portable package
+        run: |
+          $extractDir = Join-Path $env:RUNNER_TEMP "tdance-portable"
+          Expand-Archive `
+            -Path "dist\tdance-windows-portable-$env:APP_VERSION.zip" `
+            -DestinationPath $extractDir
+          @(
+            "tdance.exe",
+            "flutter_windows.dll",
+            "data\app.so",
+            "data\flutter_assets"
+          ) | ForEach-Object {
+            $path = Join-Path $extractDir $_
+            if (-not (Test-Path $path)) {
+              throw "Portable package is missing $path."
+            }
+          }
+
+      - name: Verify installer
+        run: |
+          $installer = Resolve-Path "dist\tdance-windows-setup-$env:APP_VERSION.exe"
+          $installDir = Join-Path $env:RUNNER_TEMP "tdance-install"
+          $install = Start-Process `
+            -FilePath $installer `
+            -ArgumentList @(
+              "/VERYSILENT",
+              "/SUPPRESSMSGBOXES",
+              "/NORESTART",
+              "/DIR=$installDir"
+            ) `
+            -Wait `
+            -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Installer exited with code $($install.ExitCode)."
+          }
+          if (-not (Test-Path (Join-Path $installDir "tdance.exe"))) {
+            throw "Installed application executable was not found."
+          }
+          $uninstaller = Join-Path $installDir "unins000.exe"
+          $uninstall = Start-Process `
+            -FilePath $uninstaller `
+            -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") `
+            -Wait `
+            -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "Uninstaller exited with code $($uninstall.ExitCode)."
+          }
+
+      - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
-          name: tdance-windows-${{ github.sha }}
-          path: build/windows/x64/runner/Release
+          name: tdance-windows-packages-${{ steps.version.outputs.version }}
+          path: dist
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows packages
+        uses: actions/download-artifact@v4
+        with:
+          name: tdance-windows-packages-${{ needs.build.outputs.app_version }}
+          path: dist
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* \
+              --verify-tag \
+              --generate-notes \
+              --title "tdance $GITHUB_REF_NAME"
+          fi
