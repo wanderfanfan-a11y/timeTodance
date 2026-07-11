@@ -449,8 +449,10 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
       lastDate: now.add(const Duration(days: 3650)),
     );
     if (date == null) return;
+    if (!mounted) return;
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initialDate));
     if (time == null) return;
+    if (!mounted) return;
     setState(() {
       _triggerAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
@@ -550,7 +552,8 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
     } else {
       await repo.create(task);
     }
-    if (mounted) Navigator.of(context).pop();
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   Future<void> _delete() async {
@@ -569,7 +572,8 @@ class _TimerEditPageState extends ConsumerState<TimerEditPage> {
     );
     if (confirmed == true) {
       await ref.read(timerRepositoryProvider).delete(base.id);
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      Navigator.of(context).pop();
     }
   }
 }

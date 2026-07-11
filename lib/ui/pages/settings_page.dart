@@ -46,7 +46,9 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
 
   Future<void> _syncStartupState() async {
     final enabled = await ref.read(startupServiceProvider).isEnabled();
-    if (mounted) setState(() => _actualStartupEnabled = enabled);
+    if (mounted) {
+      setState(() => _actualStartupEnabled = enabled);
+    }
   }
 
   Future<void> _update(AppSettings Function(AppSettings current) updater) async {
@@ -124,7 +126,9 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
                       context: context,
                       initialTime: settings.dndStart ?? const TimeOfDay(hour: 22, minute: 0),
                     );
-                    if (picked != null) await _update((s) => s.copyWith(dndStart: picked));
+                    if (picked != null) {
+                      await _update((s) => s.copyWith(dndStart: picked));
+                    }
                   },
                 ),
               ),
@@ -140,7 +144,9 @@ class _SettingsBodyState extends ConsumerState<_SettingsBody> {
                       context: context,
                       initialTime: settings.dndEnd ?? const TimeOfDay(hour: 7, minute: 0),
                     );
-                    if (picked != null) await _update((s) => s.copyWith(dndEnd: picked));
+                    if (picked != null) {
+                      await _update((s) => s.copyWith(dndEnd: picked));
+                    }
                   },
                 ),
               ),

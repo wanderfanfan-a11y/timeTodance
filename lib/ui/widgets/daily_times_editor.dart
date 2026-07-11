@@ -11,8 +11,12 @@ class DailyTimesEditor extends StatelessWidget {
 
   Future<void> _addTime(BuildContext context) async {
     final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (picked == null) return;
-    if (times.any((t) => t.hour == picked.hour && t.minute == picked.minute)) return;
+    if (picked == null) {
+      return;
+    }
+    if (times.any((t) => t.hour == picked.hour && t.minute == picked.minute)) {
+      return;
+    }
     final next = List<TimeOfDay>.from(times)..add(picked);
     next.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
     onChanged(next);
