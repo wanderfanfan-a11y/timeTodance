@@ -38,7 +38,6 @@ VersionInfoDescription=tdance 定时提醒安装程序
 VersionInfoCompany=TimeToDance
 
 [Languages]
-Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
