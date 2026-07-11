@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.timetodance" "\0"
-            VALUE "FileDescription", "tdance" "\0"
+            VALUE "CompanyName", "TimeToDance" "\0"
+            VALUE "FileDescription", "tdance 定时提醒" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "tdance" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.timetodance. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 TimeToDance. All rights reserved." "\0"
             VALUE "OriginalFilename", "tdance.exe" "\0"
-            VALUE "ProductName", "tdance" "\0"
+            VALUE "ProductName", "tdance 定时提醒" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
