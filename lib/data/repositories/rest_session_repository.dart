@@ -1,13 +1,15 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/models/rest_session.dart';
+import '../../platform/rest/rest_mode_dependencies.dart';
 import '../database/app_database.dart';
 
-class RestSessionRepository {
+class RestSessionRepository implements RestSessionStore {
   final AppDatabase _db;
 
   const RestSessionRepository(this._db);
 
+  @override
   Future<RestSession?> load() async {
     final row = await (_db.select(
       _db.restSessionsTable,
@@ -21,6 +23,7 @@ class RestSessionRepository {
     );
   }
 
+  @override
   Future<void> save(RestSession session) async {
     await _db
         .into(_db.restSessionsTable)
@@ -35,6 +38,7 @@ class RestSessionRepository {
         );
   }
 
+  @override
   Future<void> clear() async {
     await (_db.delete(
       _db.restSessionsTable,

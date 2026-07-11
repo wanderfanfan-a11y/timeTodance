@@ -21,7 +21,7 @@ class _RestOverlayState extends State<RestOverlay> {
 
   Timer? _clock;
   Timer? _emergencyTimer;
-  final Stopwatch _emergencyHold = Stopwatch();
+  Duration _emergencyHold = Duration.zero;
   Duration _remaining = Duration.zero;
   double _emergencyProgress = 0;
 
@@ -43,7 +43,7 @@ class _RestOverlayState extends State<RestOverlay> {
   }
 
   void _updateRemaining() {
-    final remaining = widget.session.endsAt.difference(DateTime.now());
+    final remaining = widget.session.endsAt.difference(widget.service.now());
     if (!mounted) return;
     setState(() {
       _remaining = remaining.isNegative ? Duration.zero : remaining;
@@ -71,7 +71,6 @@ class _RestOverlayState extends State<RestOverlay> {
 
   void _startEmergencyHold() {
     if (_emergencyTimer != null) return;
-    _emergencyHold.start();
     _emergencyTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       final keys = HardwareKeyboard.instance.logicalKeysPressed;
       final stillHolding =
@@ -85,9 +84,9 @@ class _RestOverlayState extends State<RestOverlay> {
         return;
       }
 
+      _emergencyHold += const Duration(milliseconds: 100);
       final progress =
-          _emergencyHold.elapsedMilliseconds /
-          _emergencyHoldDuration.inMilliseconds;
+          _emergencyHold.inMilliseconds / _emergencyHoldDuration.inMilliseconds;
       if (progress >= 1) {
         _emergencyTimer?.cancel();
         _emergencyTimer = null;
@@ -103,9 +102,7 @@ class _RestOverlayState extends State<RestOverlay> {
   void _resetEmergencyHold() {
     _emergencyTimer?.cancel();
     _emergencyTimer = null;
-    _emergencyHold
-      ..stop()
-      ..reset();
+    _emergencyHold = Duration.zero;
     if (mounted && _emergencyProgress != 0) {
       setState(() => _emergencyProgress = 0);
     }
